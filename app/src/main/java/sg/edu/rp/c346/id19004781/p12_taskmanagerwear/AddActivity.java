@@ -1,10 +1,18 @@
 package sg.edu.rp.c346.id19004781.p12_taskmanagerwear;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.RemoteInput;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,6 +24,8 @@ import java.util.Calendar;
 public class AddActivity extends AppCompatActivity {
     EditText etName, etDescription, etTime;
     Button btnAddTask, btnCancel;
+
+    int notificationId = 001; // A unique ID for our notification
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +73,72 @@ public class AddActivity extends AppCompatActivity {
 
                     finish();
                 }
+
+
+
+
+                NotificationManager nm = (NotificationManager)
+                        getSystemService(Context.NOTIFICATION_SERVICE);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    NotificationChannel channel = new
+                            NotificationChannel("default", "Default Channel",
+                            NotificationManager.IMPORTANCE_DEFAULT);
+
+                    channel.setDescription("This is for default notification");
+                    nm.createNotificationChannel(channel);
+                }
+
+                Intent intent = new Intent(AddActivity.this, MainActivity.class);
+                @SuppressLint("UnspecifiedImmutableFlag") PendingIntent pendingIntent =
+                        PendingIntent.getActivity(AddActivity.this, 0,
+                                intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+                NotificationCompat.Action action = new
+                        NotificationCompat.Action.Builder(
+                        R.mipmap.ic_launcher,
+                        "This is an Action",
+                        pendingIntent).build();
+
+                Intent intentreply = new Intent(AddActivity.this,
+                        ReplyActivity.class);
+                @SuppressLint("UnspecifiedImmutableFlag") PendingIntent pendingIntentReply = PendingIntent.getActivity
+                        (AddActivity.this, 0, intentreply,
+                                PendingIntent.FLAG_UPDATE_CURRENT);
+
+                RemoteInput ri = new RemoteInput.Builder("status")
+                        .setLabel("Status report")
+                        .setChoices(new String [] {"Done", "Not yet"})
+                        .build();
+
+                NotificationCompat.Action action2 = new
+                        NotificationCompat.Action.Builder(
+                        R.mipmap.ic_launcher,
+                        "Reply",
+                        pendingIntentReply)
+                        .addRemoteInput(ri)
+                        .build();
+
+                NotificationCompat.WearableExtender extender = new
+                        NotificationCompat.WearableExtender();
+                extender.addAction(action);
+                extender.addAction(action2);
+
+                String text = getString(R.string.basic_notify_msg);
+                String title = getString(R.string.notification_title);
+
+                NotificationCompat.Builder builder = new
+                        NotificationCompat.Builder(AddActivity.this, "default");
+                builder.setContentText(text);
+                builder.setContentTitle(title);
+                builder.setSmallIcon(android.R.drawable.btn_star_big_off);
+
+                // Attach the action for Wear notification created above
+                builder.extend(extender);
+
+                Notification notification = builder.build();
+
+                nm.notify(notificationId, notification);
+
             }
         });
 
